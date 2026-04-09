@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>진수빈 포트폴리오</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      font-family: 'Noto Sans KR', sans-serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* 슬라이드 컨테이너 */
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .slide video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* 페이지 인디케이터 */
+    #indicators {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .dot.active {
+      background: #fff;
+      width: 22px;
+      border-radius: 4px;
+    }
+
+    /* 좌우 화살표 */
+    .arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 18px;
+      backdrop-filter: blur(6px);
+    }
+
+    .arrow:hover { background: rgba(255,255,255,0.2); }
+    .arrow:active { background: rgba(255,255,255,0.3); }
+
+    #prev { left: 20px; }
+    #next { right: 20px; }
+
+    /* 페이지 번호 */
+    #page-label {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.08em;
+      z-index: 100;
+    }
+
+    /* 클릭 힌트 (첫 화면만) */
+    #hint {
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.35);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      z-index: 100;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 0.7; }
+    }
+
+    /* 전환 오버레이 */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 50;
+      transition: opacity 0.25s ease;
+    }
+    #overlay.flash {
+      opacity: 0.4;
+    }
+  </style>
+</head>
+<body>
+
+<div id="overlay"></div>
+
+<div id="stage">
+  <div class="slide active" data-index="0">
+    <video src="1.mp4" autoplay loop muted playsinline></video>
+  </div>
+  <div class="slide" data-index="1">
+    <video src="2.mp4" muted playsinline loop></video>
+  </div>
+  <div class="slide" data-index="2">
+    <video src="3.mp4" muted playsinline loop></video>
+  </div>
+  <div class="slide" data-index="3">
+    <video src="4.mp4" muted playsinline loop></video>
+  </div>
+  <div class="slide" data-index="4">
+    <video src="5.mp4" muted playsinline loop></video>
+  </div>
+  <div class="slide" data-index="5">
+    <video src="6.mp4" muted playsinline loop></video>
+  </div>
+  <div class="slide" data-index="6">
+    <video src="7.mp4" muted playsinline loop></video>
+  </div>
+  <div class="slide" data-index="7">
+    <video src="8.mp4" muted playsinline loop></video>
+  </div>
+</div>
+
+<div id="page-label">1 / 8</div>
+
+<div id="indicators">
+  <div class="dot active" data-i="0"></div>
+  <div class="dot" data-i="1"></div>
+  <div class="dot" data-i="2"></div>
+  <div class="dot" data-i="3"></div>
+  <div class="dot" data-i="4"></div>
+  <div class="dot" data-i="5"></div>
+  <div class="dot" data-i="6"></div>
+  <div class="dot" data-i="7"></div>
+</div>
+
+<div id="hint">CLICK TO CONTINUE →</div>
+
+<button class="arrow" id="prev">&#8592;</button>
+<button class="arrow" id="next">&#8594;</button>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.querySelectorAll('.dot');
+  const pageLabel = document.getElementById('page-label');
+  const hint = document.getElementById('hint');
+  const overlay = document.getElementById('overlay');
+  const total = slides.length;
+  let current = 0;
+  let transitioning = false;
+
+  function goTo(index) {
+    if (transitioning || index === current) return;
+    if (index < 0 || index >= total) return;
+    transitioning = true;
+
+    // 플래시 효과
+    overlay.classList.add('flash');
+    setTimeout(() => overlay.classList.remove('flash'), 250);
+
+    // 현재 슬라이드 숨기기
+    slides[current].classList.remove('active');
+    const prevVideo = slides[current].querySelector('video');
+    prevVideo.pause();
+
+    current = index;
+
+    // 새 슬라이드 보이기
+    slides[current].classList.add('active');
+    const nextVideo = slides[current].querySelector('video');
+    nextVideo.currentTime = 0;
+    nextVideo.play();
+
+    // 인디케이터 업데이트
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+    pageLabel.textContent = `${current + 1} / ${total}`;
+
+    // 힌트 숨기기 (첫 클릭 후)
+    if (current > 0) hint.style.display = 'none';
+
+    setTimeout(() => { transitioning = false; }, 300);
+  }
+
+  // 화면 클릭 → 다음 페이지
+  document.getElementById('stage').addEventListener('click', () => {
+    goTo((current + 1) % total);
+  });
+
+  // 화살표
+  document.getElementById('next').addEventListener('click', (e) => {
+    e.stopPropagation();
+    goTo(Math.min(current + 1, total - 1));
+  });
+  document.getElementById('prev').addEventListener('click', (e) => {
+    e.stopPropagation();
+    goTo(Math.max(current - 1, 0));
+  });
+
+  // 점 클릭
+  dots.forEach(dot => {
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      goTo(parseInt(dot.dataset.i));
+    });
+  });
+
+  // 키보드
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') goTo(Math.min(current + 1, total - 1));
+    if (e.key === 'ArrowLeft') goTo(Math.max(current - 1, 0));
+  });
+
+  // 스와이프 (모바일)
+  let startX = 0;
+  document.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goTo(Math.min(current + 1, total - 1)) : goTo(Math.max(current - 1, 0));
+    }
+  });
+</script>
+</body>
+</html>
